@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TaskManager — Full App</title>
+<meta name="description" content="Fully functional award-winning Task Manager single-file app." />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#ffffff;--panel:#fbfbfe;--muted:#6b7280;--text:#0f1724;--accent:#6c5ce7;--accent-600:#5947c2;--glass:rgba(108,92,231,0.08);--success:#10b981;--danger:#ef4444;--card-radius:14px;--shadow:0 10px 30px rgba(15,23,36,0.06)}
+[data-theme="dark"]{--bg:#0f1113;--panel:#121316;--muted:#9aa3ad;--text:#edf2f7}
+*{box-sizing:border-box} html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:var(--text);background:var(--bg)}
+.app{display:grid;grid-template-columns:260px 1fr;gap:24px;padding:28px;min-height:100vh}
+.sidebar{background:var(--panel);border-radius:var(--card-radius);padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-600));display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+.nav{display:flex;flex-direction:column;gap:6px}
+.nav button{background:transparent;border:0;padding:10px;border-radius:10px;text-align:left;color:var(--muted);cursor:pointer}
+.nav button.active{background:linear-gradient(90deg,rgba(108,92,231,0.08),transparent);color:var(--text);font-weight:600}
+.main{padding:6px}
+header.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.search{flex:1;display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;background:var(--panel);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5)}
+.controls{display:flex;gap:10px;align-items:center}
+.btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;background:var(--accent);color:#fff;font-weight:600}
+.ghost{background:transparent;border:1px solid rgba(15,23,36,0.06);color:var(--text);font-weight:600}
+.layout{display:grid;grid-template-columns:1fr 340px;gap:18px}
+.card{background:var(--panel);border-radius:var(--card-radius);padding:16px;box-shadow:var(--shadow)}
+.toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.filters{display:flex;gap:8px}
+.filters button{padding:8px 10px;border-radius:8px;border:0;background:transparent;cursor:pointer;color:var(--muted)}
+.filters button.active{background:var(--glass);color:var(--accent)}
+.tasks{display:flex;flex-direction:column;gap:10px}
+.task{display:flex;justify-content:space-between;gap:10px;padding:12px;border-radius:12px;background:white;border:1px solid rgba(15,23,36,0.03);align-items:center}
+.task .left{display:flex;gap:12px;align-items:center}
+.task .title{font-weight:600}
+.pill{padding:6px 8px;border-radius:999px;font-size:12px}
+.right .section{margin-bottom:12px}
+.kanban{display:flex;gap:12px;overflow:auto;padding-bottom:8px}
+.col{min-width:240px;background:linear-gradient(180deg,white,#fbfbfe);border-radius:12px;padding:10px;border:1px solid rgba(15,23,36,0.03)}
+.col h4{font-size:14px;margin-bottom:8px}
+.card-task{background:linear-gradient(180deg,#fff,#fcfcff);padding:10px;border-radius:10px;margin-bottom:8px;border:1px solid rgba(15,23,36,0.03)}
+@media(max-width:980px){.app{grid-template-columns:1fr;padding:14px}.layout{grid-template-columns:1fr}.sidebar{flex-direction:row;align-items:center;overflow:auto;padding:12px}}
+.muted{color:var(--muted);font-size:13px}
+.small{font-size:13px}
+input,select,textarea{padding:10px;border-radius:10px;border:1px solid rgba(15,23,36,0.06);background:white}
+.kbd{background:#f3f4f6;padding:6px 8px;border-radius:6px;font-weight:700}
+.fade-in{animation:fadeIn 0.6s ease}@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.slide-in{animation:slideIn 0.4s ease}@keyframes slideIn{from{opacity:0;transform:translateX(-20px);}to{opacity:1;transform:translateX(0);}}
+.nav-buttons button{transition:background 0.3s,transform 0.2s}
+.nav-buttons button:hover{background:rgba(255,255,255,0.35);transform:scale(1.05)}
+#calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#calendar-header button{background:var(--accent);color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app" role="application">
+  <aside class="sidebar" aria-label="Main sidebar">
+    <div class="brand">
+      <div class="logo">TM</div>
+      <div>
+        <div style="font-weight:800">TaskManager</div>
+        <div class="muted" style="font-size:13px">Plan • Do • Done</div>
+      </div>
+    </div>
+
+    <nav class="nav" aria-label="Main navigation">
+      <button id="nav-inbox" class="active">Inbox</button>
+      <button id="nav-kanban">Kanban</button>
+      <button id="nav-calendar">Calendar</button>
+      <button id="nav-stats">Stats</button>
+      <button id="nav-settings">Settings</button>
+    </nav>
+
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+      <div class="muted small">Shortcuts: <span class="kbd">N</span> new</div>
+      <button id="newBtn" class="btn">New Task</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <div class="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="opacity:.6"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <input id="q" placeholder="Search tasks, projects, tags..." style="border:0;outline:none;flex:1;background:transparent" />
+      </div>
+      <div class="controls">
+        <button id="importBtn" class="ghost">Import</button>
+        <button id="exportBtn" class="ghost">Export</button>
+        <button id="themeBtn" class="ghost">Theme</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section id="task-section" class="card fade-in">
+        <div class="toolbar">
+          <div>
+            <div style="font-weight:800;font-size:18px">Inbox</div>
+            <div class="muted small">All tasks across projects</div>
+          </div>
+          <div class="filters">
+            <button data-filter="all" class="active">All</button>
+            <button data-filter="today">Today</button>
+            <button data-filter="week">This Week</button>
+            <button data-filter="high">High Priority</button>
+          </div>
+        </div>
+
+        <div id="listView"><div class="tasks" id="tasks"></div></div>
+
+        <div id="kanbanView" style="display:none">
+          <div class="kanban">
+            <div class="col"><h4>To Do</h4><div id="col-todo"></div></div>
+            <div class="col"><h4>In Progress</h4><div id="col-doing"></div></div>
+            <div class="col"><h4>Done</h4><div id="col-done"></div></div>
+          </div>
+        </div>
+
+      </section>
+
+      <aside class="right">
+        <div class="card section">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:800">Create Task</div>
+            <div class="muted small">Quick</div>
+          </div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            <input id="title" placeholder="Task title" />
+            <textarea id="details" rows="3" placeholder="Details (optional)"></textarea>
+            <div style="display:flex;gap:8px">
+              <select id="priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
+              <input id="due" type="date" />
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="save" class="btn">Save</button>
+              <button id="clear" class="ghost">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card section">
+          <div style="font-weight:800">Stats</div>
+          <div style="margin-top:8px"><canvas id="miniChart" height="120"></canvas></div>
+        </div>
+
+        <div class="card section fade-in" id="calendarSection" style="display:none">
+          <div id="calendar-header">
+            <button id="prevMonth">&lt;</button>
+            <div id="calendarMonth" style="font-weight:700"></div>
+            <button id="nextMonth">&gt;</button>
+          </div>
+          <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+          <div style="margin-top:8px;"><span class="muted small">Click on a date to add a task</span></div>
+        </div>
+
+        <div class="card section fade-in" id="settingsSection" style="display:none">
+          <div style="font-weight:800">Settings</div>
+          <div class="muted small" style="margin-top:6px">Customize your TaskManager</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            <label>Theme:
+              <select id="themeSelect">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </label>
+            <button id="clearData" class="ghost">Clear All Data</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+// ===== STATE =====
+const STORAGE_KEY='tm_v2';
+const defaultState={tasks:[],projects:[],ui:{view:'list',filter:'all',query:'',theme:'light'},calendar:{year:null,month:null}};
+let state=loadState();
+
+// ===== NOTIFICATION TIMERS =====
+const notificationTimers = {}; // id -> timeout id
+const MAX_TIMEOUT = 2147483647; // setTimeout cap (~24.8 days)
+
+// ===== UTILITIES =====
+const qs = s => document.querySelector(s);
+const qsa = s => document.querySelectorAll(s);
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function loadState(){ try{ const s = JSON.parse(localStorage.getItem(STORAGE_KEY)); return s || JSON.parse(JSON.stringify(defaultState)); }catch(e){ return JSON.parse(JSON.stringify(defaultState)); }}
+function uid(){ return 'id_' + Math.random().toString(36).slice(2,9); }
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;"}[m])); }
+
+// ===== RENDER UI =====
+function renderUI(){
+  // Apply theme
+  if(state.ui.theme === 'dark') document.documentElement.setAttribute('data-theme','dark');
+  else document.documentElement.removeAttribute('data-theme');
+
+  // Ensure nav active state
+  qsa('.nav button').forEach(b=>b.classList.remove('active'));
+  const view = state.ui.view || 'list';
+  if(view === 'list') qs('#nav-inbox').classList.add('active');
+  if(view === 'kanban') qs('#nav-kanban').classList.add('active');
+  if(view === 'calendar') qs('#nav-calendar').classList.add('active');
+  if(view === 'settings') qs('#nav-settings').classList.add('active');
+
+  // Show/hide panels according to view
+  setView(view);
+}
+
+// ===== ELEMENTS =====
+const tasksEl = qs('#tasks');
+const colTodo = qs('#col-todo'); const colDoing = qs('#col-doing'); const colDone = qs('#col-done');
+const titleEl = qs('#title'); const detailsEl = qs('#details'); const priorityEl = qs('#priority'); const dueEl = qs('#due');
+const calendarSection = qs('#calendarSection'); const calendarMonthEl = qs('#calendarMonth'); const calendarGridEl = qs('#calendarGrid');
+const settingsSection = qs('#settingsSection');
+
+// initialize miniChart variable before using renderMiniChart to avoid TDZ error
+let miniChart = null;
+
+// ===== INITIAL RENDER CALLS (functions declared as hoisted) =====
+renderUI(); renderTasks(); renderProjects(); renderMiniChart(); renderCalendar(); scheduleAllNotifications();
+
+// ===== TASK HANDLERS =====
+function defaultSave(){
+  const title = titleEl.value.trim(); if(!title) return alert('Title required');
+  const t = { id: uid(), title, details: detailsEl.value, priority: priorityEl.value, due: dueEl.value || null, status: 'todo', done: false, created: Date.now() };
+  state.tasks.unshift(t); saveState(); clearForm(); renderTasks(); renderMiniChart(); renderCalendar(); scheduleNotificationForTask(t);
+}
+qs('#save').onclick = defaultSave;
+qs('#clear').onclick = clearForm;
+function clearForm(){ titleEl.value=''; detailsEl.value=''; priorityEl.value='low'; dueEl.value=''; }
+qs('#newBtn').onclick = ()=>{ titleEl.focus(); }
+document.addEventListener('keydown', e=>{ if(e.key.toLowerCase()==='n' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) titleEl.focus(); });
+
+// ===== FILTERS =====
+qsa('.filters button').forEach(b=>{ b.onclick = ()=>{ qsa('.filters button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); state.ui.filter = b.dataset.filter; saveState(); renderTasks(); }});
+
+// ===== NAVIGATION =====
+qs('#nav-inbox').onclick = ()=>{ setView('list'); }
+qs('#nav-kanban').onclick = ()=>{ setView('kanban'); }
+qs('#nav-stats').onclick = ()=>{ setView('stats'); renderMiniChart(); }
+qs('#nav-calendar').onclick = ()=>{ setView('calendar'); renderCalendar(); }
+qs('#nav-settings').onclick = ()=>{ setView('settings'); }
+
+function setView(v){
+  state.ui.view = v; saveState();
+  qs('#listView').style.display = v==='list' ? 'block' : 'none';
+  qs('#kanbanView').style.display = v==='kanban' ? 'block' : 'none';
+  calendarSection.style.display = v==='calendar' ? 'block' : 'none';
+  settingsSection.style.display = v==='settings' ? 'block' : 'none';
+  qs('#task-section').style.display = (v==='calendar' || v==='settings') ? 'none' : 'block';
+  // active nav
+  qsa('.nav button').forEach(b=>b.classList.remove('active'));
+  if(v==='list') qs('#nav-inbox').classList.add('active');
+  if(v==='kanban') qs('#nav-kanban').classList.add('active');
+  if(v==='stats') qs('#nav-stats').classList.add('active');
+  if(v==='calendar') qs('#nav-calendar').classList.add('active');
+  if(v==='settings') qs('#nav-settings').classList.add('active');
+}
+
+// ===== RENDER TASKS =====
+function renderTasks(){
+  const q = state.ui.query && state.ui.query.toLowerCase();
+  const now = new Date();
+  const filtered = state.tasks.filter(t=>{
+    if(state.ui.filter==='today'){ if(!t.due) return false; return new Date(t.due).toDateString()===now.toDateString(); }
+    if(state.ui.filter==='week'){ if(!t.due) return false; const d=new Date(t.due); const diff=(d-now)/(1000*60*60*24); return diff>=0 && diff<7; }
+    if(state.ui.filter==='high') return t.priority==='high';
+    return true;
+  }).filter(t=>{ if(!q) return true; return t.title.toLowerCase().includes(q) || (t.details||'').toLowerCase().includes(q); });
+
+  tasksEl.innerHTML = '';
+  if(filtered.length === 0) tasksEl.innerHTML = '<div class="muted">No tasks — create one!</div>';
+
+  filtered.forEach(t=>{
+    const el = document.createElement('div'); el.className = 'task slide-in';
+    const left = document.createElement('div'); left.className = 'left';
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = !!t.done; cb.onchange = ()=>{ t.done = cb.checked; t.status = t.done? 'done' : (t.status==='done' ? 'todo' : t.status); saveState(); renderTasks(); renderMiniChart(); renderCalendar(); if(t.done) clearNotification(t.id); else scheduleNotificationForTask(t); }
+    const meta = document.createElement('div'); meta.innerHTML = `<div class="title">${escapeHtml(t.title)}</div><div class="muted small">${t.details? escapeHtml(t.details).slice(0,80):''}</div>`;
+    left.appendChild(cb); left.appendChild(meta);
+
+    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
+    const due = document.createElement('div'); due.className='muted small'; due.textContent = t.due? new Date(t.due).toLocaleDateString() : '';
+    const pri = document.createElement('div'); pri.className='pill'; pri.textContent = t.priority; pri.style.background = t.priority==='high'? 'rgba(239,68,68,0.08)' : t.priority==='medium'? 'rgba(250,204,21,0.08)' : 'rgba(16,185,129,0.06)'; pri.style.color = t.priority==='high' ? '#ef4444' : t.priority==='medium' ? '#b45309' : '#065f46';
+    const del = document.createElement('button'); del.className='ghost'; del.textContent='Delete'; del.onclick = ()=>{ if(confirm('Delete task?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); saveState(); renderTasks(); renderProjects(); renderMiniChart(); renderCalendar(); clearNotification(t.id); } }
+    right.appendChild(due); right.appendChild(pri); right.appendChild(del);
+
+    el.appendChild(left); el.appendChild(right);
+    tasksEl.appendChild(el);
+  });
+
+  // Kanban columns
+  colTodo.innerHTML=''; colDoing.innerHTML=''; colDone.innerHTML='';
+  state.tasks.forEach(t=>{
+    const ct=document.createElement('div'); ct.className='card-task'; ct.textContent = t.title; ct.draggable = true; ct.ondragstart = e=>{ e.dataTransfer.setData('text/plain', t.id); };
+    ct.ondblclick = ()=>{ if(confirm('Delete this task?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); saveState(); renderTasks(); renderMiniChart(); renderCalendar(); clearNotification(t.id); } };
+    if(t.status==='todo') colTodo.appendChild(ct); else if(t.status==='doing') colDoing.appendChild(ct); else colDone.appendChild(ct);
+  });
+
+  [colTodo,colDoing,colDone].forEach(col=>{
+    col.ondragover = e=>{ e.preventDefault(); col.style.opacity=0.9; }
+    col.ondragleave = e=>{ col.style.opacity=1; }
+    col.ondrop = e=>{ const id = e.dataTransfer.getData('text/plain'); const t = state.tasks.find(x=>x.id===id); if(t){ if(col===colTodo) t.status='todo'; if(col===colDoing) t.status='doing'; if(col===colDone) t.status='done'; saveState(); renderTasks(); renderMiniChart(); renderCalendar(); } }
+  });
+}
+
+// ===== PROJECTS (simple placeholder list) =====
+function renderProjects(){ const el = document.querySelector('#projects'); if(!el) return; el.innerHTML=''; if(state.projects.length===0) el.innerHTML='<div class="muted">No projects</div>'; state.projects.forEach(p=>{ const d=document.createElement('div'); d.style.display='flex'; d.style.justifyContent='space-between'; d.style.alignItems='center'; d.innerHTML=`<div>${escapeHtml(p.name)}</div>`; const btn=document.createElement('button'); btn.className='ghost'; btn.textContent='Open'; btn.onclick=()=>{ alert('Project view coming soon'); }; d.appendChild(btn); el.appendChild(d); }); }
+
+// ===== MINI CHART =====
+function renderMiniChart(){ const done = state.tasks.filter(t=>t.done).length; const total = state.tasks.length; const ctx = qs('#miniChart').getContext('2d'); if(miniChart) miniChart.destroy(); miniChart = new Chart(ctx,{type:'doughnut',data:{labels:['Done','Pending'],datasets:[{data:[done, Math.max(0,total-done)],backgroundColor:['#6c5ce7','#e6e9f8']}]},options:{plugins:{legend:{display:true}}}}); }
+
+// ===== CALENDAR =====
+function renderCalendar(){ const now = new Date(); if(!state.calendar.year) state.calendar.year = now.getFullYear(); if(!state.calendar.month) state.calendar.month = now.getMonth(); const year = state.calendar.year; const month = state.calendar.month; const firstDay = new Date(year, month, 1).getDay(); const lastDate = new Date(year, month+1, 0).getDate(); calendarMonthEl.textContent = `${new Date(year, month).toLocaleString('default',{month:'long'})} ${year}`; calendarGridEl.innerHTML=''; for(let i=0;i<firstDay;i++){ calendarGridEl.appendChild(document.createElement('div')); } for(let d=1; d<=lastDate; d++){ const cell = document.createElement('div'); cell.style.padding='8px'; cell.style.border='1px solid rgba(0,0,0,0.05)'; cell.style.minHeight='60px'; cell.style.position='relative'; const dateLabel = document.createElement('div'); dateLabel.textContent=d; dateLabel.style.fontWeight='600'; cell.appendChild(dateLabel); const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const dayTasks = state.tasks.filter(t=>t.due===dateStr); dayTasks.forEach(t=>{ const tEl = document.createElement('div'); tEl.textContent = t.title; tEl.style.fontSize='10px'; tEl.style.background = t.done?'rgba(108,92,231,0.08)':'rgba(250,204,21,0.1)'; tEl.style.color = t.done?'#6c5ce7':'#b45309'; tEl.style.borderRadius='4px'; tEl.style.padding='2px 4px'; tEl.style.marginTop='2px'; tEl.style.cursor='pointer'; tEl.onclick = ()=>{ if(confirm('Delete this task?')){ state.tasks = state.tasks.filter(x=>x.id!==t.id); saveState(); renderTasks(); renderMiniChart(); renderCalendar(); clearNotification(t.id); } }; cell.appendChild(tEl); }); cell.onclick = (e)=>{ if(e.target!==cell && e.target!==dateLabel) return; const taskTitle = prompt('Enter task for this date:'); if(taskTitle){ const t = {id:uid(),title:taskTitle,details:'',priority:'medium',due:dateStr,status:'todo',done:false,created:Date.now()}; state.tasks.unshift(t); saveState(); renderTasks(); renderMiniChart(); renderCalendar(); scheduleNotificationForTask(t); } }; calendarGridEl.appendChild(cell); }
+  qs('#prevMonth').onclick = ()=>{ state.calendar.month--; if(state.calendar.month<0){ state.calendar.month=11; state.calendar.year--; } saveState(); renderCalendar(); }
+  qs('#nextMonth').onclick = ()=>{ state.calendar.month++; if(state.calendar.month>11){ state.calendar.month=0; state.calendar.year++; } saveState(); renderCalendar(); }
+}
+
+// ===== EXPORT / IMPORT =====
+qs('#exportBtn').onclick = ()=>{ const data = JSON.stringify(state, null, 2); const blob = new Blob([data], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'taskmanager-export.json'; a.click(); URL.revokeObjectURL(a.href); }
+qs('#importBtn').onclick = ()=>{ const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json'; inp.onchange = ()=>{ const f = inp.files[0]; const r = new FileReader(); r.onload = ()=>{ try{ const d = JSON.parse(r.result); if(d.tasks){ state = d; saveState(); renderTasks(); renderProjects(); renderMiniChart(); renderCalendar(); scheduleAllNotifications(); alert('Imported'); } else alert('Invalid file'); }catch(e){alert('Invalid JSON')} }; r.readAsText(f); }; inp.click(); }
+
+// ===== SEARCH =====
+qs('#q').oninput = (e)=>{ state.ui.query = e.target.value; saveState(); renderTasks(); }
+
+// ===== THEME & SETTINGS =====
+qs('#themeSelect').onchange = (e)=>{ state.ui.theme = e.target.value; saveState(); if(e.target.value==='dark') document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme'); }
+qs('#clearData').onclick = ()=>{ if(confirm('Clear all data (localStorage)?')){ localStorage.removeItem(STORAGE_KEY); state = JSON.parse(JSON.stringify(defaultState)); saveState(); renderTasks(); renderProjects(); renderMiniChart(); renderCalendar(); } }
+
+// Theme header button behavior (toggle + persist)
+qs('#themeBtn').onclick = ()=> {
+  state.ui.theme = state.ui.theme === 'dark' ? 'light' : 'dark';
+  saveState();
+  if(state.ui.theme === 'dark') {
+    document.documentElement.setAttribute('data-theme','dark');
+    qs('#themeSelect').value = 'dark';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    qs('#themeSelect').value = 'light';
+  }
+};
+
+// ===== DEMO DATA =====
+if(state.tasks.length===0 && !localStorage.getItem('tm_demo')){
+  state.tasks.push({id:uid(),title:'Welcome to TaskManager',details:'This is a demo task. Use N to focus new task.',priority:'medium',due:null,status:'todo',done:false,created:Date.now()});
+  state.tasks.push({id:uid(),title:'Design landing page',details:'Match the deep royal purple theme',priority:'high',due:null,status:'doing',done:false,created:Date.now()-86400000});
+  state.projects.push({id:uid(),name:'Personal'});
+  localStorage.setItem('tm_demo','1'); saveState(); renderTasks(); renderProjects(); renderMiniChart(); renderCalendar();
+}
+
+// ===== NOTIFICATIONS (browser-only) =====
+
+// Ask for permission (non-blocking)
+function requestNotificationPermission(){
+  if(!('Notification' in window)) return Promise.resolve(false);
+  if(Notification.permission === 'granted') return Promise.resolve(true);
+  if(Notification.permission === 'denied') return Promise.resolve(false);
+  // ask user
+  return Notification.requestPermission().then(p => p === 'granted');
+}
+
+// Clear a scheduled timer for a task id
+function clearNotification(id){
+  if(notificationTimers[id]){ clearTimeout(notificationTimers[id]); delete notificationTimers[id]; }
+}
+
+// Schedule notification for a single task
+function scheduleNotificationForTask(task){
+  // clear existing
+  clearNotification(task.id);
+  // only date-only due are supported: schedule at 09:00 local time of due date
+  if(!task.due || task.done) return;
+  // construct local due time at 09:00
+  const dueDate = new Date(task.due + 'T09:00:00');
+  // If parsing fails, skip
+  if(isNaN(dueDate.getTime())) return;
+  const diff = dueDate.getTime() - Date.now();
+  if(diff <= 0){
+    // If due date is today or past -> trigger immediately (but only if date equals today OR a small grace)
+    const today = new Date();
+    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if(dueDateOnly.getTime() === todayOnly.getTime()){
+      // notify now
+      triggerNotification(task);
+    }
+    return;
+  }
+  // Cap timeout to avoid issues with setTimeout limits.
+  const ttl = Math.min(diff, MAX_TIMEOUT);
+  const t = setTimeout(()=> {
+    triggerNotification(task);
+    delete notificationTimers[task.id];
+  }, ttl);
+  notificationTimers[task.id] = t;
+}
+
+// Schedule notifications for all tasks
+function scheduleAllNotifications(){
+  // Clear all existing
+  Object.keys(notificationTimers).forEach(id => clearNotification(id));
+  // Request permission lazily - only if there are due tasks
+  const hasDue = state.tasks.some(t=> t.due && !t.done);
+  if(!hasDue) return;
+  requestNotificationPermission().then(granted => {
+    // even if not granted, we still manage to clear/reschedule timers (no Notification will show).
+    state.tasks.forEach(t => scheduleNotificationForTask(t));
+    // reschedule periodically to handle long uptimes (every 30 minutes)
+    setInterval(()=> {
+      state.tasks.forEach(t => {
+        // only schedule for tasks that have no timer and are still due in future
+        if(!notificationTimers[t.id] && t.due && !t.done){
+          scheduleNotificationForTask(t);
+        }
+      });
+    }, 1000 * 60 * 30);
+  });
+}
+
+// Trigger the browser notification for a task
+function triggerNotification(task){
+  // double-check task still exists and not done
+  const t = state.tasks.find(x=>x.id===task.id);
+  if(!t || t.done) return;
+  try {
+    if('Notification' in window && Notification.permission === 'granted'){
+      const n = new Notification('Task Due', {
+        body: `${task.title}${task.details? ' — '+(task.details.slice(0,100)) : ''}`,
+        tag: `task-${task.id}`,
+        renotify: true
+      });
+      n.onclick = ()=> window.focus();
+    }
+  } catch(e){}
+}
+
+// Call scheduleAllNotifications whenever tasks change. To ensure this, wrap saveState calls where needed.
+// We'll also hook schedule calls into places where tasks are added/modified/deleted elsewhere in code.
+// For convenience, observe local changes by overriding saveState to also (re)schedule.
+const _origSaveState = saveState;
+saveState = function(){
+  _origSaveState();
+  // After saving, schedule notifications
+  scheduleAllNotifications();
+};
+
+// ===== RESPONSIVE / MISC =====
+window.addEventListener('resize', ()=>{/* placeholder for future responsive adjustments */});
+
+// ===== Ensure notifications are scheduled after initial load =====
+scheduleAllNotifications();
+
+</script>
+</body>
+</html>

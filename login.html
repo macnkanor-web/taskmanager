@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task Manager Landing</title>
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #ffffff;
+      color: #333;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    header {
+      width: 100%;
+      padding: 20px 10%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #6c5ce7;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 25px;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: #333;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+
+    nav ul li a:hover {
+      color: #6c5ce7;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 80px 10%;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: #111;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+      color: #555;
+    }
+
+    .hero .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 30px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: 0.3s ease;
+    }
+
+    .btn-primary {
+      background: #6c5ce7;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #5947c2;
+      transform: scale(1.05);
+    }
+
+    .btn-secondary {
+      background: #f1f1f1;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #ddd;
+    }
+
+    .preview-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 60px 10%;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      text-align: left;
+      transition: transform 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #6c5ce7;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: #555;
+    }
+
+    footer {
+      background: #fafafa;
+      padding: 30px 10%;
+      text-align: center;
+      color: #777;
+      font-size: 0.9rem;
+      margin-top: 50px;
+    }
+
+    /* ===== Loading Animation ===== */
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #6c5ce7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 999;
+    }
+
+    #loading-screen.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <span>Loading Task Manager...</span>
+  </div>
+
+  <header>
+    <div class="logo">TaskManager</div>
+    <nav>
+      <ul>
+        <li><a href="#">Products</a></li>
+        <li><a href="#">Pricing</a></li>
+        <li><a href="#">Features</a></li>
+        <li><a href="#">Company</a></li>
+        <li><a href="#">Login</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Manage Your Task.</h1>
+    <p>Easier, smarter, and more stylish way to organize and prioritize your projects in action.</p>
+    <div class="buttons">
+      <button class="btn btn-primary" id="getStarted">Get Started</button>
+      <button class="btn btn-secondary">Learn More</button>
+    </div>
+  </section>
+
+  <section class="preview-section">
+    <div class="card">
+      <h3>Smart Dashboard</h3>
+      <p>Track your activities and progress with a clean, modern dashboard.</p>
+    </div>
+    <div class="card">
+      <h3>Task Insights</h3>
+      <p>Analyze and prioritize tasks effectively with intelligent insights.</p>
+    </div>
+    <div class="card">
+      <h3>Team Collaboration</h3>
+      <p>Work together seamlessly with your team and stay aligned.</p>
+    </div>
+  </section>
+
+  <footer>
+    © 2025 TaskManager. All rights reserved.
+  </footer>
+
+  <script>
+    // Redirect to Task Manager page with animation
+    const getStartedBtn = document.getElementById('getStarted');
+    const loadingScreen = document.getElementById('loading-screen');
+
+    getStartedBtn.addEventListener('click', () => {
+      loadingScreen.classList.add('active');
+      setTimeout(() => {
+        window.location.href = 'taskmanager.html'; // <-- link to your Task Manager file
+      }, 1500);
+    });
+  </script>
+
+</body>
+</html>
