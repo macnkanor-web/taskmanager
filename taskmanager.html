@@ -50,98 +50,157 @@ input,select,textarea{padding:10px;border-radius:10px;border:1px solid rgba(15,2
 .nav-buttons button:hover{background:rgba(255,255,255,0.35);transform:scale(1.05)}
 #calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 #calendar-header button{background:var(--accent);color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer}
-  /* -------------------------------------
-   Additional responsive adjustments
-   ------------------------------------- */
+  /* ===============================
+   🌐 Universal Responsive Styles
+   Makes your site adapt to all screens
+   =============================== */
 
-/* For tablets (width ≤ 768px) */
-@media (max-width: 768px) {
-  body {
-    padding: 10px;
+/* Base rule: make everything scale smoothly */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  font-size: 16px;
+}
+
+/* Make all images, videos, and containers fluid */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Form and button elements */
+input, select, textarea, button {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- RESPONSIVE BREAKPOINTS --- */
+
+/* Large Tablets and Small Laptops (≤ 1200px) */
+@media (max-width: 1200px) {
+  .container, .main {
+    width: 95%;
+    margin: 0 auto;
   }
 
-  header {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Tablets (≤ 992px) */
+@media (max-width: 992px) {
+  header, nav, .topbar {
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
   }
 
-  .logo {
-    width: 52px;
-    height: 52px;
-    font-size: 22px;
-  }
-
-  h1 {
-    font-size: 18px;
-  }
-
-  .lead {
-    font-size: 12px;
+  .sidebar {
+    width: 220px;
   }
 
   .grid {
     grid-template-columns: 1fr;
   }
 
-  .card {
+  .card, .task-item {
     padding: 14px;
-  }
-
-  input, select, button {
-    font-size: 15px;
-  }
-
-  button {
-    width: 100%;
   }
 }
 
-/* For small phones (width ≤ 480px) */
-@media (max-width: 480px) {
-  h1 {
-    font-size: 16px;
+/* Small Tablets & Large Phones (≤ 768px) */
+@media (max-width: 768px) {
+  body {
+    font-size: 15px;
+    padding: 0 10px;
   }
 
-  .logo {
-    width: 48px;
-    height: 48px;
+  header h1, .app-title {
     font-size: 20px;
   }
 
-  .row {
-    flex-direction: column;
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    height: 100vh;
+    width: 240px;
+    background: var(--bg);
+    transition: left 0.3s ease;
+    z-index: 100;
   }
 
-  .col {
-    width: 100%;
+  .sidebar.active {
+    left: 0;
   }
 
-  button {
-    padding: 12px;
+  .main {
+    margin-left: 0 !important;
+  }
+
+  .hamburger {
+    display: block;
+    cursor: pointer;
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+}
+
+/* Mobile Phones (≤ 576px) */
+@media (max-width: 576px) {
+  header h1, .app-title {
+    font-size: 18px;
+  }
+
+  .task-item, .card {
     font-size: 14px;
+    padding: 12px;
   }
 
-  .controls-right {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .about {
-    font-size: 12px;
+  button, input, select {
+    font-size: 14px;
+    padding: 10px;
   }
 
   footer {
     font-size: 12px;
-    padding: 8px 0;
-    @media (max-width: 400px) {
-  .container {
-    margin: 0;
+    text-align: center;
+    padding: 8px;
+  }
+}
+
+/* Extra Small Phones (≤ 400px) */
+@media (max-width: 400px) {
+  body {
+    font-size: 14px;
   }
 
-  .card {
-    box-shadow: none;
-    border-radius: 8px;
+  .task-item {
+    padding: 10px;
+  }
+
+  .sidebar {
+    width: 200px;
+  }
+
+  button {
+    width: 100%;
+    font-size: 13px;
+    padding: 9px;
+  }
+
+  h1, h2, h3 {
+    font-size: 16px;
+  }
+}
+
   }
 </style>
 </head>
@@ -545,4 +604,5 @@ scheduleAllNotifications();
 </script>
 </body>
 </html>
+
 
